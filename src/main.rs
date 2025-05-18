@@ -75,11 +75,10 @@ impl VnStats {
             total_rx += entry.rx;
         }
 
-        let result = VnStatTrafficTotal {
+        VnStatTrafficTotal {
             tx: total_tx,
             rx: total_rx,
-        };
-        result
+        }
     }
 }
 
