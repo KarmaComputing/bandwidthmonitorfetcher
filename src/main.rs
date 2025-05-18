@@ -6,8 +6,9 @@ use std::error::Error;
 struct VnStats {
     vnstatversion: String,
     jsonversion: String,
-    interfaces: Vec<VnStatInterface>,
+    interfaces: Vec<VnStatInterface>
 }
+
 
 #[derive(Deserialize, Debug)]
 struct VnStatInterface {
@@ -68,6 +69,17 @@ struct VnStatDate {
     year: u32,
 }
 
+impl VnStats {
+    fn fiveminute_total(&self) -> u64 {
+        let mut total: u64 = 0;
+        for entry in &self.interfaces[0].traffic.fiveminute {
+            total += entry.tx;
+        }
+
+        total
+    }
+}
+
 fn main() {
     run().unwrap()
 }
@@ -81,6 +93,8 @@ fn run() -> Result<(), Box<dyn Error>> {
     let num_interfaces = req.interfaces.len();
     println!("The number of interfaces is: {}", num_interfaces);
     println!("{req:#?}");
+    let total = req.fiveminute_total();
+    println!("fiveminuteTotal: {}", {total});
     /*
     println!(
         "An interface {:?}\n, name: {}\n, alias: {}\n. Created: {}/{}/{}\n Timestamp: {} \n. ",
