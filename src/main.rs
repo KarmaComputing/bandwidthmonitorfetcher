@@ -1,7 +1,13 @@
-use std::{error::Error, f32::consts::E};
-
+use std::{error::Error};
 use reqwest::{self};
+use serde::Deserialize;
 
+
+#[derive(Deserialize, Debug)]
+struct VnStats {
+    vnstatversion: String,
+    jsonversion: String,
+}
 
 fn main() {
     run().unwrap()
@@ -9,10 +15,12 @@ fn main() {
 
 fn run() -> Result<(), Box<dyn Error>> {
 
-    let req = reqwest::blocking::get("http://127.0.0.1:8685/json.cgi")?
-    .text()?;
+    let req: VnStats = reqwest::blocking::get("http://127.0.0.1:8685/json.cgi")?
+    .json()?;
     
-    println!("{req}");
+    println!("{req:?}");
+    println!("The vnstatversion is: {}", req.vnstatversion);
+    println!("The jsonversion is: {}", req.jsonversion);
 
     Ok(())
 }
