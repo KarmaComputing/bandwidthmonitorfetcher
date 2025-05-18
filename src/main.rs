@@ -14,13 +14,52 @@ struct VnStatInterface {
     name: String,
     alias: String,
     created: VnStatDateCreated,
+    updated: VnStatDateUpdated,
+    traffic: VnStatTraffic
 }
+
+#[derive(Deserialize, Debug)]
+struct VnStatTraffic {
+    total: VnStatTrafficTotal,
+    fiveminute: Vec<VnStatTrafficFiveminute>
+}
+
+#[derive(Deserialize, Debug)]
+struct VnStatTrafficTotal {
+    rx: u64,
+    tx: u64
+}
+
+#[derive(Deserialize, Debug)]
+struct VnStatTrafficFiveminute {
+    id: u32,
+    date: VnStatDate,
+    time: VnStatTime,
+    timestamp: u32,
+    rx: u64,
+    tx: u64
+}
+
 
 #[derive(Deserialize, Debug)]
 struct VnStatDateCreated {
     date: VnStatDate,
     timestamp: u32,
 }
+
+#[derive(Deserialize, Debug)]
+struct VnStatDateUpdated {
+    date: VnStatDate,
+    time: VnStatTime,
+    timestamp: u32
+}
+
+#[derive(Deserialize, Debug)]
+struct VnStatTime {
+    hour: u32,
+    minute: u32
+}
+
 
 #[derive(Deserialize, Debug)]
 struct VnStatDate {
