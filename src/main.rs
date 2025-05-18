@@ -1,14 +1,13 @@
 use reqwest::{self};
 use serde::Deserialize;
-use std::error::Error;
+use std::{error::Error};
 
 #[derive(Deserialize, Debug)]
 struct VnStats {
     vnstatversion: String,
     jsonversion: String,
-    interfaces: Vec<VnStatInterface>
+    interfaces: Vec<VnStatInterface>,
 }
-
 
 #[derive(Deserialize, Debug)]
 struct VnStatInterface {
@@ -16,19 +15,19 @@ struct VnStatInterface {
     alias: String,
     created: VnStatDateCreated,
     updated: VnStatDateUpdated,
-    traffic: VnStatTraffic
+    traffic: VnStatTraffic,
 }
 
 #[derive(Deserialize, Debug)]
 struct VnStatTraffic {
     total: VnStatTrafficTotal,
-    fiveminute: Vec<VnStatTrafficFiveminute>
+    fiveminute: Vec<VnStatTrafficFiveminute>,
 }
 
 #[derive(Deserialize, Debug)]
 struct VnStatTrafficTotal {
     rx: u64,
-    tx: u64
+    tx: u64,
 }
 
 #[derive(Deserialize, Debug)]
@@ -38,9 +37,8 @@ struct VnStatTrafficFiveminute {
     time: VnStatTime,
     timestamp: u32,
     rx: u64,
-    tx: u64
+    tx: u64,
 }
-
 
 #[derive(Deserialize, Debug)]
 struct VnStatDateCreated {
@@ -52,15 +50,14 @@ struct VnStatDateCreated {
 struct VnStatDateUpdated {
     date: VnStatDate,
     time: VnStatTime,
-    timestamp: u32
+    timestamp: u32,
 }
 
 #[derive(Deserialize, Debug)]
 struct VnStatTime {
     hour: u32,
-    minute: u32
+    minute: u32,
 }
-
 
 #[derive(Deserialize, Debug)]
 struct VnStatDate {
@@ -70,13 +67,19 @@ struct VnStatDate {
 }
 
 impl VnStats {
-    fn fiveminute_total(&self) -> u64 {
-        let mut total: u64 = 0;
+    fn fiveminute_total(&self) -> VnStatTrafficTotal {
+        let mut total_tx: u64 = 0;
+        let mut total_rx: u64 = 0;
         for entry in &self.interfaces[0].traffic.fiveminute {
-            total += entry.tx;
+            total_tx += entry.tx;
+            total_rx += entry.rx;
         }
 
-        total
+        let result = VnStatTrafficTotal {
+            tx: total_tx,
+            rx: total_rx,
+        };
+        result
     }
 }
 
@@ -94,7 +97,7 @@ fn run() -> Result<(), Box<dyn Error>> {
     println!("The number of interfaces is: {}", num_interfaces);
     println!("{req:#?}");
     let total = req.fiveminute_total();
-    println!("fiveminuteTotal: {}", {total});
+    println!("fiveminuteTotal: {:?}", { total });
     /*
     println!(
         "An interface {:?}\n, name: {}\n, alias: {}\n. Created: {}/{}/{}\n Timestamp: {} \n. ",
@@ -119,5 +122,4 @@ fn run() -> Result<(), Box<dyn Error>> {
         Ok(jsonData) => jsonData,
         Err(e) => return Err(e) ,
     }
-
 */
