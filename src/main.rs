@@ -1,19 +1,8 @@
 use reqwest::{self};
-use serde::Deserialize;
 use std::error::Error;
+use types::VnStats;
 
-#[derive(Deserialize, Debug)]
-struct VnStats {
-    vnstatversion: String,
-    jsonversion: String,
-    interfaces: Vec<VnStatInterface>,
-}
-
-#[derive(Deserialize, Debug)]
-struct VnStatInterface {
-    name: String,
-    alias: String,
-}
+mod types;
 
 fn main() {
     run().unwrap()
