@@ -1,6 +1,6 @@
 use reqwest::{self};
 use serde::Deserialize;
-use std::{error::Error};
+use std::error::Error;
 
 #[derive(Deserialize, Debug)]
 struct VnStats {
@@ -68,17 +68,14 @@ struct VnStatDate {
 
 impl VnStats {
     fn fiveminute_total(&self) -> VnStatTrafficTotal {
-        let mut total_tx: u64 = 0;
-        let mut total_rx: u64 = 0;
+        let mut tx: u64 = 0;
+        let mut rx: u64 = 0;
         for entry in &self.interfaces[0].traffic.fiveminute {
-            total_tx += entry.tx;
-            total_rx += entry.rx;
+            tx += entry.tx;
+            rx += entry.rx;
         }
 
-        VnStatTrafficTotal {
-            tx: total_tx,
-            rx: total_rx,
-        }
+        VnStatTrafficTotal { tx, rx }
     }
 }
 
