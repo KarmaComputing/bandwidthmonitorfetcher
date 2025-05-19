@@ -1,6 +1,8 @@
 use reqwest::{self};
 use serde::Deserialize;
 use std::error::Error;
+use std::env;
+use std::process::exit;
 
 #[derive(Deserialize, Debug)]
 struct VnStats {
@@ -78,9 +80,14 @@ impl VnStats {
         VnStatTrafficTotal { tx, rx }
     }
 
+
+    fn get_vnstats() -> Result<VnStats, reqwest::Error> {
+        reqwest::blocking::get("http://127.0.0.1:8685/json.cgi")?.json()
+    }
+
     fn get_interface(interface_name: &str) -> Result<Option<VnStatInterface>, Box<dyn Error>> {
         // Locate a given interface from the vnstats json output
-        let vnstats: VnStats = reqwest::blocking::get("http://127.0.0.1:8685/json.cgi")?.json()?;
+        let vnstats: VnStats = Self::get_vnstats()?;
 
         println!("Getting interface_name: {}", interface_name);
         let target_interface = "wlp0s20f3";
@@ -96,10 +103,23 @@ impl VnStats {
 }
 
 fn main() {
-    run().unwrap()
+    run().unwrap();
 }
 
 fn run() -> Result<(), Box<dyn Error>> {
+
+    let args: Vec<String> = env::args().collect();
+    dbg!(&args);
+
+    if *&args.len() == 2 {
+        println!("Number of args is: {}", args.len());
+
+        if args[1] == "list" {
+            println!("List interfaces...");
+            exit(0);
+        }
+    }
+
     let vnstats: Result<Option<VnStatInterface>, Box<dyn Error + 'static>> =
         VnStats::get_interface("eth0");
 
