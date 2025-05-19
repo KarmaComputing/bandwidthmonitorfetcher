@@ -1,7 +1,7 @@
 use reqwest::{self};
 use serde::Deserialize;
-use std::error::Error;
 use std::env;
+use std::error::Error;
 use std::process::exit;
 
 #[derive(Deserialize, Debug)]
@@ -69,17 +69,15 @@ struct VnStatDate {
 }
 
 impl VnStats {
-    fn fiveminute_total(&self) -> VnStatTrafficTotal {
+    fn fiveminute_total(vnstat_traffic: VnStatTraffic) -> VnStatTrafficTotal {
         let mut tx: u64 = 0;
         let mut rx: u64 = 0;
-        for entry in &self.interfaces[0].traffic.fiveminute {
+        for entry in vnstat_traffic.fiveminute {
             tx += entry.tx;
             rx += entry.rx;
         }
-
         VnStatTrafficTotal { tx, rx }
     }
-
 
     fn get_vnstats() -> Result<VnStats, reqwest::Error> {
         reqwest::blocking::get("http://127.0.0.1:8685/json.cgi")?.json()
@@ -89,13 +87,10 @@ impl VnStats {
         // Locate a given interface from the vnstats json output
         let vnstats: VnStats = Self::get_vnstats()?;
 
-        println!("Getting interface_name: {}", interface_name);
-        let target_interface = "wlp0s20f3";
-
         let interface = vnstats
             .interfaces
             .iter()
-            .find(|interface| interface.name == target_interface)
+            .find(|interface| interface.name == interface_name)
             .cloned();
 
         Ok(interface)
@@ -107,31 +102,67 @@ fn main() {
 }
 
 fn run() -> Result<(), Box<dyn Error>> {
-
     let args: Vec<String> = env::args().collect();
-    dbg!(&args);
+    //dbg!(&args);
 
-    if *&args.len() == 2 {
-        println!("Number of args is: {}", args.len());
-
-        if args[1] == "list" {
-            println!("List interfaces...");
-            exit(0);
-        }
+    let help_message = "Help\nlist - List interfaces known to vnstat";
+    if *&args.len() == 1 {
+        println!("{help_message:?}");
     }
 
-    let vnstats: Result<Option<VnStatInterface>, Box<dyn Error + 'static>> =
-        VnStats::get_interface("eth0");
+    if *&args.len() == 2 {
+        if args[1] == "help" || args[1] == "-h" {
+            println!("{help_message:?}");
+        }
 
-    match vnstats {
-        Ok(Some(interface)) => {
-            println!("Traffic: {:?}", interface.traffic);
-        }
-        Ok(None) => {
-            println!("No interface found with that name.");
-        }
-        Err(e) => {
-            eprintln!("Error getting interface traffic: {}", e);
+        if args[1] == "list" {
+            let vnstats = VnStats::get_vnstats();
+            match vnstats {
+                Ok(vnstats) => {
+                    for interface in vnstats.interfaces {
+                        println!("{}", interface.name)
+                    }
+                }
+                Err(e) => {
+                    eprint!("Error getting vnstats: {}", e)
+                }
+            }
+            exit(0);
+        } else {
+            // Assume wants stats for a given interface name
+            let interface_name = &args[1];
+            let vnstats: Result<Option<VnStatInterface>, Box<dyn Error + 'static>> =
+                VnStats::get_interface(&interface_name);
+
+            match vnstats {
+                Ok(Some(interface)) => {
+                    let traffic_usage = VnStats::fiveminute_total(interface.traffic);
+                    let total_in_out_bytes: u64 = traffic_usage.tx + traffic_usage.rx;
+                    let total_in_out_mb: f64 = total_in_out_bytes as f64 / 1_000_000.0;
+                    let total_in_out_gb: f64 = total_in_out_bytes as f64/ 1_000_000_000.0;
+
+                    println!(
+                        "Last 5mins bandwidth usage for interface: '{}'\n\
+                        tx: {} bytes\n\
+                        rx: {} bytes\n\
+                        Total in/out bytes: {} bytes\n\
+                        Total in/out Mb: {:.2} Mb\n\
+                        Total in/out Gb: {:.2} Gb",
+                        interface.name,
+                        traffic_usage.tx,
+                        traffic_usage.rx,
+                        total_in_out_bytes,
+                        total_in_out_mb,
+                        total_in_out_gb
+                    );
+                }
+                Ok(None) => {
+                    println!("No interface found with that name.");
+                }
+                Err(e) => {
+                    eprintln!("Error getting interface traffic: {}", e);
+                }
+            }
         }
     }
 
